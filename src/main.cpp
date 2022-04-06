@@ -39,7 +39,20 @@ using namespace std;
 
 bool needRedisplay=false;
 ShapesC* sphere;
+ShapesC* cone;
 bool state = true;
+
+
+/*
+* use the view function, they're all supposed to be points, so destination is the point that'll be ending
+* make sure that the bird is originally facing positive z, or if that doesn't work do x
+* can pull things out of blendr pretty easily, maybe maya would be easier to learn
+* view = glm::lookAt(glm::vec3(420.f, 420.f, 420.f),//eye
+		glm::vec3(0, 0, 0),  //destination
+		glm::vec3(0, 1, 0)); //up
+ * if it happens to be 
+*/
+
 
 
 float max_x = 400.0f;
@@ -391,7 +404,7 @@ public:
 
 	void renderFlock() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_CLEAR_VALUE);
-		sphere->Render();
+		//sphere->Render();
 		for (Boid* boid : boidList) {
 			glutPostRedisplay();
 			if (boid->object) {
@@ -400,14 +413,29 @@ public:
 				glm::mat4 m = glm::translate(glm::mat4(1.0), boid->position);
 				//m = glm::scale(m, glm::normalize(boid->velocity) * 2.0f);
 
-				sphere->SetModel(m);
+				//sphere->SetModel(m);
+				cone->SetModel(m);
 				glm::mat3 modelViewN = glm::mat3(view * m);
 				modelViewN = glm::transpose(glm::inverse(modelViewN));
-				sphere->SetModelViewN(modelViewN);
-				sphere->Render();
+				//sphere->SetModelViewN(modelViewN);
+				//sphere->Render();
+				cone->SetModelViewN(modelViewN);
+				cone->Render();
 			}
 			else {
-				drawCone(glm::normalize(boid->velocity), boid->position + boid->velocity, 3, 2, 8);
+				glm::mat4 m = glm::translate(glm::mat4(1.0), boid->position);
+				//m = glm::scale(m, glm::normalize(boid->velocity) * 2.0f);
+
+				//sphere->SetModel(m);
+				cone->SetModel(m);
+				glm::mat3 modelViewN = glm::mat3(view * m);
+				modelViewN = glm::transpose(glm::inverse(modelViewN));
+				//sphere->SetModelViewN(modelViewN);
+				//sphere->Render();
+				cone->SetModelViewN(modelViewN);
+				cone->Render();
+				
+				//drawCone(glm::normalize(boid->velocity), boid->position + boid->velocity, 3, 2, 8);
 			}
 		}
 		
@@ -664,13 +692,13 @@ void Kbd(unsigned char a, int x, int y)
 	  case 'o': 
 	  case 'O': {ignoreObjects = !ignoreObjects; break; }
 	  case 'g': 
-	  case 'G': {sphere->SetKd(glm::vec3(0,1,0));break;}
+	  case 'G': {cone->SetKd(glm::vec3(0,1,0));break;} // these were all sphere before cone was added
 	  case 'b': 
-	  case 'B': {sphere->SetKd(glm::vec3(0,0,1));break;}
+	  case 'B': {cone->SetKd(glm::vec3(0,0,1));break;}
 	  case 'w': 
-	  case 'W': {sphere->SetKd(glm::vec3(0.7,0.7,0.7)); state = !state; break;}
-	  case '+': {sphere->SetSh(sh+=1);break;}
-	  case '-': {sphere->SetSh(sh-=1);if (sh<1) sh=1;break;}
+	  case 'W': {cone->SetKd(glm::vec3(0.7,0.7,0.7)); state = !state; break;}
+	  case '+': {cone->SetSh(sh+=1);break;}
+	  case '-': {cone->SetSh(sh-=1);if (sh<1) sh=1;break;}
 	}
 	flock.printVals();
 	//cout << "shineness="<<sh<<endl;
@@ -769,7 +797,7 @@ void InitializeProgram(GLuint *program)
 void InitShapes(ShaderParamsC *params)
 {
 //create one unit sphere in the origin
-	sphere=new SphereC(50,50,2.0f);
+	/*sphere = new SphereC(50, 50, 2.0f);
 	sphere->SetKa(glm::vec3(0.1,0.1,0.1));
 	sphere->SetKs(glm::vec3(0,0,1));
 	sphere->SetKd(glm::vec3(0.7,0.7,0.7));
@@ -781,6 +809,19 @@ void InitShapes(ShaderParamsC *params)
 	sphere->SetKdToShader(params->kdParameter);
 	sphere->SetKsToShader(params->ksParameter);
 	sphere->SetShToShader(params->shParameter);
+	*/
+	cone = new Cone();
+	cone->SetKa(glm::vec3(0.1, 0.1, 0.1));
+	cone->SetKs(glm::vec3(0, 0, 1));
+	cone->SetKd(glm::vec3(0.7, 0.7, 0.7));
+	cone->SetSh(200);
+	cone->SetModel(glm::mat4(1.0));
+	cone->SetModelMatrixParamToShader(params->modelParameter);
+	cone->SetModelViewNMatrixParamToShader(params->modelViewNParameter);
+	cone->SetKaToShader(params->kaParameter);
+	cone->SetKdToShader(params->kdParameter);
+	cone->SetKsToShader(params->ksParameter);
+	cone->SetShToShader(params->shParameter);
 }
 
 

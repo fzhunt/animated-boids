@@ -68,9 +68,11 @@ public:
 	Cone();
 	virtual void Render();
 private:
-	GLfloat r;
+	GLfloat rd, h;
+	GLuint n;
 	void Cone::Generate(glm::vec3 d, glm::vec3 a,
 		float h, float rd, int n);
+	void InitArrays();
 };
 
 //derived class from ShapesC
