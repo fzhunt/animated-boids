@@ -40,7 +40,7 @@ using namespace std;
 bool needRedisplay=false;
 ShapesC* sphere;
 ShapesC* cone;
-bool state = true;
+bool unpaused = true;
 
 
 /*
@@ -410,7 +410,10 @@ public:
 			if (boid->object) {
 				//cout << "drawing at " << boid->position.x << ", " << boid->position.y << ", " << boid->position.z << endl;
 
-				glm::mat4 m = glm::translate(glm::mat4(1.0), boid->position);
+				//glm::mat4 m = glm::translate(glm::mat4(1.0), boid->position);
+				glm::mat4 m = glm::lookAt(boid->position,//eye
+					boid->position + boid->velocity * dt,  //destination
+					glm::vec3(0, 1, 0)); //up
 				//m = glm::scale(m, glm::normalize(boid->velocity) * 2.0f);
 
 				//sphere->SetModel(m);
@@ -449,8 +452,9 @@ public:
 		//	sphere->SetModelViewN(modelViewN);
 		//	sphere->Render();
 		//}
-
-		applyRules();
+		if (unpaused) {
+			applyRules();
+		}
 	}
 
 };
@@ -540,7 +544,6 @@ void RenderObjects()
 	//pos.x=20*sin(ftime/12);pos.y=-10;pos.z=20*cos(ftime/12);pos.w=1;
 	light.SetPos(pos);
 	light.SetShaders();
-	
 	flock.renderFlock();
 
 	/*glColor3f(0.3, 0.5, 0.7);
@@ -578,6 +581,10 @@ void Kbd(unsigned char a, int x, int y)
 	switch(a)
 	{
  	  case 27 : exit(0);break;
+	  case 'p': 
+	  case 'P':
+		  unpaused = !unpaused;
+		  break;
 	  case 'c':
 		  if (flock.cohesionFactor - factorStep < 0) {
 			  flock.setCohesion(0);
@@ -696,7 +703,7 @@ void Kbd(unsigned char a, int x, int y)
 	  case 'b': 
 	  case 'B': {cone->SetKd(glm::vec3(0,0,1));break;}
 	  case 'w': 
-	  case 'W': {cone->SetKd(glm::vec3(0.7,0.7,0.7)); state = !state; break;}
+	  case 'W': {cone->SetKd(glm::vec3(0.7,0.7,0.7)); break;}
 	  case '+': {cone->SetSh(sh+=1);break;}
 	  case '-': {cone->SetSh(sh-=1);if (sh<1) sh=1;break;}
 	}
