@@ -9,7 +9,7 @@
 #include <vector>
 #include <GL/glut.h>
 #include <glm/glm.hpp>
-
+#include "tiny_obj_loader.h"
 
 using namespace std;
 
@@ -100,6 +100,17 @@ public:
 private:
   void InitArrays();
   void Generate();
+};
+
+
+class ModelC : public ShapesC {
+public:
+	ModelC(string file);
+	virtual void Render();
+private:
+	tinyobj::ObjReader reader;
+	void InitArrays();
+	void Generate(string file);
 };
 
 
