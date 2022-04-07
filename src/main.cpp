@@ -31,6 +31,12 @@
 #include "shapes.h"    
 #include "lights.h"    
 
+#include "tiny_obj_loader.h"
+
+#include "imgui.h"
+#include "imgui_impl_glut.h"
+#include "imgui_impl_opengl3.h"
+
 #pragma warning(disable : 4996)
 #pragma comment(lib, "glew32.lib")
 #pragma comment(lib, "glut32.lib")
@@ -40,6 +46,7 @@ using namespace std;
 bool needRedisplay=false;
 ShapesC* sphere;
 ShapesC* cone;
+ShapesC* model;
 bool unpaused = true;
 
 
@@ -424,19 +431,29 @@ public:
 				//sphere->Render();
 				cone->SetModelViewN(modelViewN);
 				cone->Render();
+
 			}
 			else {
 				glm::mat4 m = glm::translate(glm::mat4(1.0), boid->position);
+				m = glm::scale(m, glm::vec3(0.1f, 0.1f, 0.1f));
+				
 				//m = glm::scale(m, glm::normalize(boid->velocity) * 2.0f);
 
 				//sphere->SetModel(m);
-				cone->SetModel(m);
+				//cone->SetModel(m);
+				//glm::mat3 modelViewN = glm::mat3(view * m);
+				//modelViewN = glm::transpose(glm::inverse(modelViewN));
+				////sphere->SetModelViewN(modelViewN);
+				////sphere->Render();
+				//cone->SetModelViewN(modelViewN);
+				//cone->Render();
+
+				model->SetModel(m);
 				glm::mat3 modelViewN = glm::mat3(view * m);
 				modelViewN = glm::transpose(glm::inverse(modelViewN));
-				//sphere->SetModelViewN(modelViewN);
-				//sphere->Render();
-				cone->SetModelViewN(modelViewN);
-				cone->Render();
+				model->SetModelViewN(modelViewN);
+				model->Render();
+
 				
 				//drawCone(glm::normalize(boid->velocity), boid->position + boid->velocity, 3, 2, 8);
 			}
@@ -474,8 +491,8 @@ LightC light;
 
 
 //the main window size
-GLint wWindow=800;
-GLint hWindow=800;
+GLint wWindow=900;
+GLint hWindow=900;
 
 float sh=1;
 
@@ -493,7 +510,7 @@ void Reshape(int w, int h)
 }
 
 void setupFlock() {
-	for (int i = 0; i < 1000; i++) {
+	for (int i = 0; i < 100; i++) {
 		float x = ((float)rand() / (float)RAND_MAX) * 2 - 1;
 		float y = ((float)rand() / (float)RAND_MAX) * 2 - 1;
 		float z = ((float)rand() / (float)RAND_MAX) * 2 - 1;
@@ -510,6 +527,9 @@ void setupFlock() {
 			flock.boidList.push_back(new Boid(glm::vec3(a * max_x, b * max_y, c * max_z), i));
 		}
 	}
+
+	//flock.boidList.push_back(new Boid(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), 0));
+	//flock.boidList.push_back(new Boid(glm::vec3(50, 50, 50), glm::vec3(0, 0, 1), 1));
 				
 
 }
@@ -559,20 +579,78 @@ void RenderObjects()
 	glColor3f(0.7, 0.7, 0.7);
 	*/
 }
+
+void renderGUI() {
+	ImGui::Begin("Welcome to Boids");                         
+
+	ImGui::Text("Flock Parameters");
+	ImGui::SliderFloat("Separation", &flock.separationFactor, 0.0f, 1.0f);
+	ImGui::SliderFloat("Cohesion", &flock.cohesionFactor, 0.0f, 1.0f);
+	ImGui::SliderFloat("Alignment", &flock.alignmentFactor, 0.0f, 1.0f);
+	ImGui::SliderFloat("View Radius", &flock.radius, 0.0f, 100.0f);
+	ImGui::SliderFloat("View Angle", &flock.angle, 0.0f, 360.0f);
+	ImGui::SliderFloat("Avoidance Radius", &flock.avoidDistance, 0.0f, flock.radius);
+	ImGui::SliderFloat("Max Velocity", &flock.maxspeed, 0.0f, 10.0f);
+
+	if (ImGui::Button("Reseed Boids")) {
+		for_each(flock.boidList.begin(), flock.boidList.end(), delete_ptr());
+		flock.boidList.clear();
+		setupFlock();
+	}
+
+	if (ImGui::Button("Reset Parameters")) {
+		flock.setRadius(30.0f);
+		flock.setAngle(90.0f);
+		flock.setSeparation(1.0f);
+		flock.setCohesion(0.6f);
+		flock.setAlignment(0.2f);
+		flock.setAvoidanceDistance(10);
+		flock.setMaxSpeed(4);
+	}
+
+	ImGui::End();
+}
 	
 void Idle(void)
 {
+	/*ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGLUT_NewFrame();
+	ImGui::Render();
+	ImGuiIO& io = ImGui::GetIO();
+
   glClearColor(0.1,0.1,0.1,1);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
   ftime+=0.05;
   glUseProgram(shaderProgram);
+
+  renderGUI();
   RenderObjects();
-  glutSwapBuffers();  
+
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+  glutSwapBuffers(); */ 
 }
 
 void Display(void)
 {
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGLUT_NewFrame();
 
+	renderGUI();
+
+	ImGui::Render();
+	ImGuiIO& io = ImGui::GetIO();
+
+	
+
+	glClearColor(0.1, 0.1, 0.1, 1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	ftime += 0.05;
+	glUseProgram(shaderProgram);
+	RenderObjects();
+	
+
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	glutSwapBuffers();
 }
 
 //keyboard callback
@@ -829,8 +907,21 @@ void InitShapes(ShaderParamsC *params)
 	cone->SetKdToShader(params->kdParameter);
 	cone->SetKsToShader(params->ksParameter);
 	cone->SetShToShader(params->shParameter);
-}
 
+
+	model = new ModelC("plane.obj");
+	model->SetKa(glm::vec3(0.1, 0.1, 0.1));
+	model->SetKs(glm::vec3(0, 0, 1));
+	model->SetKd(glm::vec3(0.7, 0.7, 0.7));
+	model->SetSh(200);
+	model->SetModel(glm::mat4(1.0));
+	model->SetModelMatrixParamToShader(params->modelParameter);
+	model->SetModelViewNMatrixParamToShader(params->modelViewNParameter);
+	model->SetKaToShader(params->kaParameter);
+	model->SetKdToShader(params->kdParameter);
+	model->SetKsToShader(params->ksParameter);
+	model->SetShToShader(params->shParameter);
+}
 
 
 int main(int argc, char **argv)
@@ -842,8 +933,6 @@ int main(int argc, char **argv)
 	flock.boidList.push_back(new Boid(glm::vec3(55, 45, 50), glm::vec3(0, 1, 0), 2));
 	flock.boidList.push_back(new Boid(glm::vec3(50, 45, 55), glm::vec3(0, 1, 0), 3));*/
 	
-
-
 
   glutInitDisplayString("stencil>=2 rgb double depth samples");
   glutInit(&argc, argv);
@@ -864,7 +953,24 @@ int main(int argc, char **argv)
   InitializeProgram(&shaderProgram);
   InitShapes(&params);
   flock.printVals();
+
+
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+  ImGui::StyleColorsDark();
+
+  ImGui_ImplGLUT_Init();
+  ImGui_ImplGLUT_InstallFuncs();
+  ImGui_ImplOpenGL3_Init();
+
   glutMainLoop();
+
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplGLUT_Shutdown();
+  ImGui::DestroyContext();
+
   return 0;        
 }
 	
