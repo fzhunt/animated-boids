@@ -164,7 +164,7 @@ void Cone::InitArrays() {
 }
 
 Cone::Cone() {
-	Generate(glm::vec3(1, 0, 0), glm::vec3(0), 3, 2, 8);
+	Generate(glm::vec3(0, 0, 1), glm::vec3(0), 3, 2, 8);
 	InitArrays();
 }
 

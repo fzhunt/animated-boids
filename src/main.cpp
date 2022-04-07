@@ -407,13 +407,11 @@ public:
 		//sphere->Render();
 		for (Boid* boid : boidList) {
 			glutPostRedisplay();
+			glm::vec3 pos = boid->position;
 			if (boid->object) {
 				//cout << "drawing at " << boid->position.x << ", " << boid->position.y << ", " << boid->position.z << endl;
 
-				//glm::mat4 m = glm::translate(glm::mat4(1.0), boid->position);
-				glm::mat4 m = glm::lookAt(boid->position,//eye
-					boid->position + boid->velocity * dt,  //destination
-					glm::vec3(0, 1, 0)); //up
+				glm::mat4 m = glm::translate(glm::mat4(1.0), boid->position);
 				//m = glm::scale(m, glm::normalize(boid->velocity) * 2.0f);
 
 				//sphere->SetModel(m);
@@ -426,9 +424,12 @@ public:
 				cone->Render();
 			}
 			else {
-				glm::mat4 m = glm::translate(glm::mat4(1.0), boid->position);
+				//glm::mat4 m = glm::translate(glm::mat4(1.0), boid->position);
 				//m = glm::scale(m, glm::normalize(boid->velocity) * 2.0f);
-
+				glm::mat4 m = glm::lookAt(pos,//eye
+					pos + glm::normalize(boid->velocity) * 6.0f,  //destination
+					glm::vec3(0, 1, 0));
+				m = glm::scale(m, glm::vec3(4));
 				//sphere->SetModel(m);
 				cone->SetModel(m);
 				glm::mat3 modelViewN = glm::mat3(view * m);
