@@ -73,5 +73,6 @@
     <ClInclude Include="src\tiny_obj_loader.h">
       <Filter>tinyobjloader</Filter>
     </ClInclude>
+    <ClInclude Include="src\imgui\imgui.h" />
   </ItemGroup>
 </Project>

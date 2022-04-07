@@ -418,32 +418,43 @@ public:
 			if (boid->object) {
 				//cout << "drawing at " << boid->position.x << ", " << boid->position.y << ", " << boid->position.z << endl;
 
-				glm::mat4 m = glm::translate(glm::mat4(1.0), boid->position);
+				glm::mat4 m = glm::lookAt(glm::vec3(0),//eye
+					glm::vec3(1, 0, 0) ,  //destination
+					glm::vec3(1, 0, 0));
 				//m = glm::scale(m, glm::normalize(boid->velocity) * 2.0f);
 
 				//sphere->SetModel(m);
-				cone->SetModel(m);
+				model->SetModel(m);
 				glm::mat3 modelViewN = glm::mat3(view * m);
 				modelViewN = glm::transpose(glm::inverse(modelViewN));
 				//sphere->SetModelViewN(modelViewN);
 				//sphere->Render();
-				cone->SetModelViewN(modelViewN);
-				cone->Render();
+				model->SetModelViewN(modelViewN);
+				model->Render();
 
 			}
 			else {
 				//glm::mat4 m = glm::translate(glm::mat4(1.0), boid->position);
 				//m = glm::scale(m, glm::normalize(boid->velocity) * 2.0f);
-				glm::mat4 m = glm::lookAt(pos,//eye
-					pos + glm::normalize(boid->velocity) * 6.0f,  //destination
+				
+				glm::mat4 m = glm::lookAt(glm::vec3(0),//eye
+					boid->velocity,  //destination
 					glm::vec3(0, 1, 0));
-				m = glm::scale(m, glm::vec3(4));
+//				m = glm::rotate(m, -45.f, glm::vec3(0, 0, 1));
+				//m = glm::rotate(m, 45.f, glm::vec3(0, 1, 0));
+				m = glm::translate(m, boid->position);
+				m = glm::inverse(m);
+				//m = glm::scale(m, glm::vec3(0.5));
+				//cout << boid->id << ", vel: " << boid->velocity.x << ", " << boid->velocity.y <<
+				//	", " << boid->velocity.z << endl;
+				
+				//m = m * rotation;
 				//sphere->SetModel(m);
 				//cone->SetModel(m);
 				//glm::mat3 modelViewN = glm::mat3(view * m);
 				//modelViewN = glm::transpose(glm::inverse(modelViewN));
-				////sphere->SetModelViewN(modelViewN);
-				////sphere->Render();
+				//sphere->SetModelViewN(modelViewN);
+				//sphere->Render();
 				//cone->SetModelViewN(modelViewN);
 				//cone->Render();
 
@@ -509,7 +520,7 @@ void Reshape(int w, int h)
 }
 
 void setupFlock() {
-	for (int i = 0; i < 100; i++) {
+	for (int i = 0; i < 50; i++) {
 		float x = ((float)rand() / (float)RAND_MAX) * 2 - 1;
 		float y = ((float)rand() / (float)RAND_MAX) * 2 - 1;
 		float z = ((float)rand() / (float)RAND_MAX) * 2 - 1;
@@ -519,8 +530,9 @@ void setupFlock() {
 		float c = ((float)rand() / (float)RAND_MAX);
 
 		//flock.boidList.push_back(new Boid(glm::vec3(i * 20 + 50, k * 20 + 50, j * 20 + 50), glm::vec3(x, y, z), id));
-		if (i > 2) {
-			flock.boidList.push_back(new Boid(glm::vec3(a * max_x, b * max_y, c * max_z), glm::vec3(x, y, z), i));
+		if (i > 0) {
+			flock.boidList.push_back(new Boid(glm::vec3(0), glm::vec3(x, y, z), i));
+			//			flock.boidList.push_back(new Boid(glm::vec3(a * max_x, b * max_y, c * max_z), glm::vec3(x, y, z), i));
 		}
 		else {
 			flock.boidList.push_back(new Boid(glm::vec3(a * max_x, b * max_y, c * max_z), i));
@@ -553,7 +565,7 @@ void RenderObjects()
 				     glm::vec3(0,0,0),  //destination
 				     glm::vec3(0,1,0)); //u
 					 */
-	view = glm::lookAt(glm::vec3(420.f, 420.f, 420.f),//eye
+	view = glm::lookAt(glm::vec3(100.f, 100.f, 100.f),//eye
 		glm::vec3(0, 0, 0),  //destination
 		glm::vec3(0, 1, 0)); //up
 
@@ -596,7 +608,9 @@ void renderGUI() {
 		flock.boidList.clear();
 		setupFlock();
 	}
-
+	if (ImGui::Button("Pause")) {
+		unpaused = !unpaused;
+	}
 	if (ImGui::Button("Reset Parameters")) {
 		flock.setRadius(30.0f);
 		flock.setAngle(90.0f);
@@ -606,7 +620,9 @@ void renderGUI() {
 		flock.setAvoidanceDistance(10);
 		flock.setMaxSpeed(4);
 	}
-
+	if (ImGui::Button("Exit")) {
+		exit(0);
+	}
 	ImGui::End();
 }
 	
@@ -908,10 +924,10 @@ void InitShapes(ShaderParamsC *params)
 	cone->SetShToShader(params->shParameter);
 
 
-	model = new ModelC("plane.obj");
+	model = new ModelC("wings.obj");
 	model->SetKa(glm::vec3(0.1, 0.1, 0.1));
 	model->SetKs(glm::vec3(0, 0, 1));
-	model->SetKd(glm::vec3(0.7, 0.7, 0.7));
+	model->SetKd(glm::vec3(0.7, 1, 0.7));
 	model->SetSh(200);
 	model->SetModel(glm::mat4(1.0));
 	model->SetModelMatrixParamToShader(params->modelParameter);
