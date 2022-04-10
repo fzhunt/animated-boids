@@ -46,7 +46,7 @@ using namespace std;
 bool needRedisplay=false;
 ShapesC* sphere;
 ShapesC* cone;
-ShapesC* model;
+vector <ShapesC*> models;
 bool unpaused = true;
 
 
@@ -104,18 +104,21 @@ public:
 	glm::vec3 position;
 	glm::vec3 velocity;
 	bool object;
+	int index = 0;
 
 	Boid() {
 		position = glm::vec3(0);
 		velocity = glm::vec3(1);
 		id = 0;
 		object = false;
+		index = 0;
 	}
 
 	Boid(glm::vec3 p, int d) {
 		position = p;
 		velocity = glm::vec3(0);
 		object = true;
+		index = 0;
 	}
 
 	Boid(glm::vec3 p, glm::vec3 v, int d) {
@@ -123,6 +126,7 @@ public:
 		velocity = v;
 		id = d;
 		object = false;
+		index = 0;
 	}
 };
 
@@ -143,7 +147,7 @@ public:
 	float cohesionFactor;
 	float alignmentFactor;
 
-	float maxspeed = 4.0f;
+	float maxspeed = 2.0f;
 
 	Flock() {
 		radius = 30.0f;
@@ -270,6 +274,7 @@ public:
 		//findSumOfPos();
 		//findSumOfVelocity();
 		for (Boid* boid : boidList) {
+			boid->index++;
 			glm::vec3 sep = separation(boid) * separationFactor;
 			glm::vec3 coh = cohesion(boid) * cohesionFactor;
 			glm::vec3 align = alignment(boid) * alignmentFactor;
@@ -316,7 +321,10 @@ public:
 			if (boid->position.z < 0 + margin) {
 				boid->velocity.z += turn;
 			}
-			
+			if (boid->velocity.y <= 0) {
+				boid->index += 4;
+			}
+			boid->index = boid->index % 60;
 		}
 	}
 
@@ -424,13 +432,13 @@ public:
 				//m = glm::scale(m, glm::normalize(boid->velocity) * 2.0f);
 
 				//sphere->SetModel(m);
-				model->SetModel(m);
+				models[boid->index/2]->SetModel(m);
 				glm::mat3 modelViewN = glm::mat3(view * m);
 				modelViewN = glm::transpose(glm::inverse(modelViewN));
 				//sphere->SetModelViewN(modelViewN);
 				//sphere->Render();
-				model->SetModelViewN(modelViewN);
-				model->Render();
+				models[boid->index / 2]->SetModelViewN(modelViewN);
+				models[boid->index / 2]->Render();
 
 			}
 			else {
@@ -458,11 +466,11 @@ public:
 				//cone->SetModelViewN(modelViewN);
 				//cone->Render();
 
-				model->SetModel(m);
+				models[boid->index / 2]->SetModel(m);
 				glm::mat3 modelViewN = glm::mat3(view * m);
 				modelViewN = glm::transpose(glm::inverse(modelViewN));
-				model->SetModelViewN(modelViewN);
-				model->Render();
+				models[boid->index / 2]->SetModelViewN(modelViewN);
+				models[boid->index / 2]->Render();
 
 				
 				//drawCone(glm::normalize(boid->velocity), boid->position + boid->velocity, 3, 2, 8);
@@ -520,7 +528,7 @@ void Reshape(int w, int h)
 }
 
 void setupFlock() {
-	for (int i = 0; i < 50; i++) {
+	for (int i = 0; i < 20; i++) {
 		float x = ((float)rand() / (float)RAND_MAX) * 2 - 1;
 		float y = ((float)rand() / (float)RAND_MAX) * 2 - 1;
 		float z = ((float)rand() / (float)RAND_MAX) * 2 - 1;
@@ -565,7 +573,7 @@ void RenderObjects()
 				     glm::vec3(0,0,0),  //destination
 				     glm::vec3(0,1,0)); //u
 					 */
-	view = glm::lookAt(glm::vec3(100.f, 100.f, 100.f),//eye
+	view = glm::lookAt(glm::vec3(50.f, 50.f, 50.f),//eye
 		glm::vec3(0, 0, 0),  //destination
 		glm::vec3(0, 1, 0)); //up
 
@@ -923,19 +931,22 @@ void InitShapes(ShaderParamsC *params)
 	cone->SetKsToShader(params->ksParameter);
 	cone->SetShToShader(params->shParameter);
 
+	for (int i = 1; i < 31; i++) {
+		ShapesC * temp = new ModelC("Penguin" + std::to_string(i) + ".obj");
+		temp->SetKa(glm::vec3(0.1, 0.1, 0.1));
+		temp->SetKs(glm::vec3(0, 0, 1));
+		temp->SetKd(glm::vec3(0.7, 1, 0.7));
+		temp->SetSh(200);
+		temp->SetModel(glm::mat4(1.0));
+		temp->SetModelMatrixParamToShader(params->modelParameter);
+		temp->SetModelViewNMatrixParamToShader(params->modelViewNParameter);
+		temp->SetKaToShader(params->kaParameter);
+		temp->SetKdToShader(params->kdParameter);
+		temp->SetKsToShader(params->ksParameter);
+		temp->SetShToShader(params->shParameter);
+		models.push_back(temp);
+	}
 
-	model = new ModelC("wings.obj");
-	model->SetKa(glm::vec3(0.1, 0.1, 0.1));
-	model->SetKs(glm::vec3(0, 0, 1));
-	model->SetKd(glm::vec3(0.7, 1, 0.7));
-	model->SetSh(200);
-	model->SetModel(glm::mat4(1.0));
-	model->SetModelMatrixParamToShader(params->modelParameter);
-	model->SetModelViewNMatrixParamToShader(params->modelViewNParameter);
-	model->SetKaToShader(params->kaParameter);
-	model->SetKdToShader(params->kdParameter);
-	model->SetKsToShader(params->ksParameter);
-	model->SetShToShader(params->shParameter);
 }
 
 
