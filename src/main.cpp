@@ -376,13 +376,24 @@ public:
 			glutPostRedisplay();
 			glm::vec3 pos = boid->position;
 			if (boid->object) {
-				glm::mat4 m = glm::translate(glm::mat4(1.0), pos);
-				m = glm::scale(m, glm::vec3(1.5f));
-				sphere->SetModel(m);
-				glm::mat3 modelViewN = glm::mat3(view * m);
-				modelViewN = glm::transpose(glm::inverse(modelViewN));
-				sphere->SetModelViewN(modelViewN);
-				sphere->Render();
+				if (!ignoreObjects) {
+					glm::mat4 m = glm::translate(glm::mat4(1.0), pos);
+					m = glm::scale(m, glm::vec3(1.5f));
+					sphere->SetModel(m);
+					glm::mat3 modelViewN = glm::mat3(view * m);
+					modelViewN = glm::transpose(glm::inverse(modelViewN));
+					sphere->SetModelViewN(modelViewN);
+					sphere->Render();
+				}
+				else {
+					glm::mat4 m = glm::mat4(0);
+					m = glm::scale(m, glm::vec3(1.5f));
+					sphere->SetModel(m);
+					glm::mat3 modelViewN = glm::mat3(view * m);
+					modelViewN = glm::transpose(glm::inverse(modelViewN));
+					sphere->SetModelViewN(modelViewN);
+					sphere->Render();
+				}
 
 			}
 			else {
@@ -860,7 +871,7 @@ void InitShapes(ShaderParamsC* params)
 	for (int i = 1; i < 31; i++) {
 		ShapesC* temp = new ModelC("Penguin" + std::to_string(i) + ".obj");
 		temp->SetKa(glm::vec3(0.1, 0.1, 0.1));
-		temp->SetKs(glm::vec3(0, 0, 1));
+		temp->SetKs(glm::vec3(1, 1, 1));
 		temp->SetKd(glm::vec3(0.7, 1, 0.7));
 		temp->SetSh(200);
 		temp->SetModel(glm::mat4(1.0));
