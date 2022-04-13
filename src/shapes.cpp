@@ -14,6 +14,12 @@
 
 using namespace std;
 
+
+/*
+ * Object loading code was provided from https://github.com/tinyobjloader/tinyobjloader
+ */
+
+
 //help procedure that send values from glm::vec3 to a STL vector of float
 //used for creating VBOs
 inline void AddVertex(vector <GLfloat> *a, const glm::vec3 *v)
@@ -57,22 +63,6 @@ void ShapesC::SetColor(GLubyte r,GLubyte b,GLubyte g)
 	color[2]=b;
 }
 
-void Cone::Render() {
-	glBindVertexArray(vaID);
-	//	glBindBuffer(GL_ARRAY_BUFFER, buffer);
-	//	glEnableVertexAttribArray(0);
-		//material properties
-	glUniform3fv(kaParameter, 1, glm::value_ptr(ka));
-	glUniform3fv(kdParameter, 1, glm::value_ptr(kd));
-	glUniform3fv(ksParameter, 1, glm::value_ptr(ks));
-	glUniform1fv(shParameter, 1, &sh);
-	//model matrix
-	glUniformMatrix4fv(modelParameter, 1, GL_FALSE, glm::value_ptr(model));
-	//model for normals
-	glUniformMatrix3fv(modelViewNParameter, 1, GL_FALSE, glm::value_ptr(modelViewN));
-	glDrawArrays(GL_TRIANGLES, 0, 3 * points);
-}
-
 glm::vec3 perp(const glm::vec3 v) {
 	float min = fabsf(v.x);
 	glm::vec3 cardinalAxis(1, 0, 0);
@@ -88,87 +78,6 @@ glm::vec3 perp(const glm::vec3 v) {
 
 	return glm::cross(v, cardinalAxis);
 }
-
-void Cone::Generate(glm::vec3 d, glm::vec3 a, float h, float rd, int n)
-{
-
-	glm::vec3 c = a + (-d * h);
-	glm::vec3 e0 = perp(d);
-	glm::vec3 e1 = glm::cross(e0, d);
-	float angInc = 360.0 / n * (M_PI / 180.0);
-
-	// calculate points around directrix
-	
-	std::vector<glm::vec3> pts;
-	for (int i = 0; i < n - 1; i+=2) {
-		float rad = angInc * i;
-		glm::vec3 p = c + (((e0 * cos(rad)) + (e1 * sin(rad))) * rd);
-		pts.push_back(p);
-	}
-
-	for (int i = 0; i < pts.size(); ++i) {
-		
-		// draw top (funnel shaped part)	
-		glm::vec3 nextPoint = glm::vec3(0);
-		if (i + 1 == pts.size()) {
-			nextPoint = pts[0];
-		}
-		else {
-			nextPoint = pts[i + 1];
-		}
-		glm::vec3 normalv = glm::normalize(glm::cross(pts[i] - a, pts[i] - nextPoint));
-		AddVertex(&vertex, &a);
-		AddVertex(&normal, &normalv);
-		AddVertex(&vertex, &pts[i]);
-		AddVertex(&normal, &normalv);
-		AddVertex(&vertex, &nextPoint);
-		AddVertex(&normal, &normalv);
-		
-		// draw cone bottom		
-		normalv = glm::normalize(-d);
-		AddVertex(&vertex, &c);
-		AddVertex(&normal, &normalv);
-		AddVertex(&vertex, &pts[i]);
-		AddVertex(&normal, &normalv);
-		AddVertex(&vertex, &nextPoint);
-		AddVertex(&normal, &normalv);
-	}
-}
-
-void Cone::InitArrays() {
-	points = vertex.size();
-	normals = normal.size();
-
-	//get the vertex array handle and bind it
-	glGenVertexArrays(1, &vaID);
-	glBindVertexArray(vaID);
-
-	//the vertex array will have two vbos, vertices and normals
-	glGenBuffers(2, vboHandles);
-	GLuint verticesID = vboHandles[0];
-	GLuint normalsID = vboHandles[1];
-
-	//send vertices
-	glBindBuffer(GL_ARRAY_BUFFER, verticesID);
-	glBufferData(GL_ARRAY_BUFFER, points * sizeof(GLfloat), &vertex[0], GL_STATIC_DRAW);
-	glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);
-	vertex.clear(); //no need for the vertex data, it is on the GPU now
-
-//send normals
-	glBindBuffer(GL_ARRAY_BUFFER, normalsID);
-	glBufferData(GL_ARRAY_BUFFER, normals * sizeof(GLfloat), &normal[0], GL_STATIC_DRAW);
-	glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(1);
-	normal.clear(); //no need for the normal data, it is on the GPU now
-}
-
-Cone::Cone() {
-	Generate(glm::vec3(0, 0, 1), glm::vec3(0), 3, 2, 8);
-	InitArrays();
-}
-
-
 
 void SphereC::Render()
 {

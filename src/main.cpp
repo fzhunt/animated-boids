@@ -45,22 +45,8 @@ using namespace std;
 
 bool needRedisplay = false;
 ShapesC* sphere;
-ShapesC* cone;
 vector <ShapesC*> models;
 bool unpaused = true;
-
-
-/*
-* use the view function, they're all supposed to be points, so destination is the point that'll be ending
-* make sure that the bird is originally facing positive z, or if that doesn't work do x
-* can pull things out of blendr pretty easily, maybe maya would be easier to learn
-* view = glm::lookAt(glm::vec3(420.f, 420.f, 420.f),//eye
-		glm::vec3(0, 0, 0),  //destination
-		glm::vec3(0, 1, 0)); //up
- * if it happens to be
-*/
-
-
 
 int birdCam = -1;
 
@@ -240,7 +226,6 @@ public:
 			if (!found) return glm::vec3(0);
 
 			avgV = avgV * (1.0f / neighbors);
-			//Changed this!
 			glm::vec3 force = avgV - boid->velocity;
 			return force == glm::vec3(0) ? force : glm::normalize(force);
 		}
@@ -278,8 +263,6 @@ public:
 	}
 
 	void applyRules() {
-		//findSumOfPos();
-		//findSumOfVelocity();
 		for (Boid* boid : boidList) {
 			boid->index++;
 			glm::vec3 sep = separation(boid) * separationFactor;
@@ -287,33 +270,19 @@ public:
 			glm::vec3 align = alignment(boid) * alignmentFactor;
 
 			glm::vec3 totalForce = sep + coh + align;
-
-			//cout << "separation: " << glm::to_string(sep) << endl;
-			//cout << "cohesion: " << glm::to_string(coh) << endl;
-			//cout << "alignment: " << glm::to_string(align) << endl;
-
-			//cout << "added force: " << glm::to_string(totalForce) << endl;
 			if (totalForce != glm::vec3(0)) {
-				//totalForce = glm::normalize(totalForce);
 			}
 
 			boid->velocity += totalForce;
-
-			//cout << "velocity: " << glm::to_string(boid->velocity) << endl;
 
 			boid->velocity = (glm::normalize(boid->velocity)) * maxspeed;
 
 			if (boid->object) {
 				boid->velocity = glm::vec3(0);
 			}
-			/*if (birdCam < 0) {
-				boid->position += boid->velocity * dt * 0.1f;
-				boid->prev_vel = (boid->prev_vel + boid->velocity * dt * 0.1f) / 2.0f;
-			}*/
-			//else {
-				boid->position += boid->velocity * dt * 0.1f;
-				boid->prev_vel = (boid->prev_vel + boid->velocity * dt * 0.1f) / 2.0f;
-			//}
+			
+			boid->position += boid->velocity * dt * 0.1f;
+			boid->prev_vel = (boid->prev_vel + boid->velocity * dt * 0.1f) / 2.0f;
 
 			if (boid->position.x > max_x - margin) {
 				boid->velocity.x -= turn;
@@ -371,8 +340,10 @@ public:
 
 	void renderFlock() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_CLEAR_VALUE);
-		//sphere->Render();
 		for (Boid* boid : boidList) {
+
+			if (birdCam == boid->id) continue;
+
 			glutPostRedisplay();
 			glm::vec3 pos = boid->position;
 			if (boid->object) {
@@ -385,33 +356,17 @@ public:
 					sphere->SetModelViewN(modelViewN);
 					sphere->Render();
 				}
-				else {
-					glm::mat4 m = glm::mat4(0);
-					m = glm::scale(m, glm::vec3(1.5f));
-					sphere->SetModel(m);
-					glm::mat3 modelViewN = glm::mat3(view * m);
-					modelViewN = glm::transpose(glm::inverse(modelViewN));
-					sphere->SetModelViewN(modelViewN);
-					sphere->Render();
-				}
-
 			}
 			else {
-				glm::mat4 m = glm::lookAt(glm::vec3(0),//eye
-					boid->velocity,  //destination
+				glm::mat4 m = glm::lookAt(pos,//eye
+					pos - boid->velocity,  //destination
 					glm::vec3(0, 0, 1));
-				m = glm::translate(m, pos);
-				//if (birdCam < 0) {
-					m = glm::inverse(m);
-				//}
+				m = glm::inverse(m);
 				models[boid->index / 2]->SetModel(m);
 				glm::mat3 modelViewN = glm::mat3(view * m);
 				modelViewN = glm::transpose(glm::inverse(modelViewN));
 				models[boid->index / 2]->SetModelViewN(modelViewN);
 				models[boid->index / 2]->Render();
-
-
-				//drawCone(glm::normalize(boid->velocity), boid->position + boid->velocity, 3, 2, 8);
 			}
 		}
 
@@ -464,46 +419,26 @@ void setupFlock() {
 		float a = ((float)rand() / (float)RAND_MAX);
 		float b = ((float)rand() / (float)RAND_MAX);
 		float c = ((float)rand() / (float)RAND_MAX);
-
-		//flock.boidList.push_back(new Boid(glm::vec3(i * 20 + 50, k * 20 + 50, j * 20 + 50), glm::vec3(x, y, z), id));
 		if (i > 5) {
-			//flock.boidList.push_back(new Boid(glm::vec3(0), glm::vec3(x, y, z), i));
 			flock.boidList.push_back(new Boid(glm::vec3(a * max_x, b * max_y, c * max_z), glm::vec3(x, y, z), i));
 		}
 		else {
-			flock.boidList.push_back(new Boid(glm::vec3(x * 2.0f, y * 2.0f, z * 2.0f), i));
+			flock.boidList.push_back(new Boid(glm::vec3(a * max_x, b * max_y, c * max_z), i));
 		}
 	}
 
-	//flock.boidList.push_back(new Boid(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), 0));
-	//flock.boidList.push_back(new Boid(glm::vec3(50, 50, 50), glm::vec3(0, 0, 1), 1));
-
-
 }
-
 
 
 //the main rendering function
 void RenderObjects()
 {
 	const int range = 3;
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glDisable(GL_CULL_FACE);
-	glColor3f(0, 0, 0);
-	glPointSize(2);
-	glLineWidth(1);
 	//set the projection and view once for the scene
 	glUniformMatrix4fv(params.projParameter, 1, GL_FALSE, glm::value_ptr(proj));
-	//view=glm::lookAt(glm::vec3(25*sin(ftime/40.f),5.f,15*cos(ftime/40.f)),//eye
-	//			     glm::vec3(0,0,0),  //destination
-	//			     glm::vec3(0,1,0)); //up
-	/*view = glm::lookAt(glm::vec3(260.f, 260.f, 260.f),//eye
-					 glm::vec3(0,0,0),  //destination
-					 glm::vec3(0,1,0)); //u
-					 */
 
 	if (birdCam < 0) {
-		view = glm::lookAt(glm::vec3(50.f, 50.f, 50.f),//eye
+		view = glm::lookAt(glm::vec3(500.f, 500.f, 500.f),//eye
 			glm::vec3(0, 0, 0),  //destination
 			glm::vec3(0, 0, 1)); //up
 	}
@@ -517,7 +452,6 @@ void RenderObjects()
 	glUniformMatrix4fv(params.viewParameter, 1, GL_FALSE, glm::value_ptr(view));
 	//set the light
 	static glm::vec4 pos = glm::vec4(40, 40, 40, 1);
-	//pos.x=20*sin(ftime/12);pos.y=-10;pos.z=20*cos(ftime/12);pos.w=1;
 	light.SetPos(pos);
 	light.SetShaders();
 	flock.renderFlock();
@@ -534,6 +468,7 @@ void renderGUI() {
 	ImGui::SliderFloat("View Angle", &flock.angle, 0.0f, 360.0f);
 	ImGui::SliderFloat("Avoidance Radius", &flock.avoidDistance, 0.0f, flock.radius);
 	ImGui::SliderFloat("Max Velocity", &flock.maxspeed, 0.0f, 10.0f);
+	ImGui::SliderFloat("Delta T", &dt, 0.0f, 1.0f);
 
 	if (ImGui::Button("Reseed Boids")) {
 		for_each(flock.boidList.begin(), flock.boidList.end(), delete_ptr());
@@ -565,6 +500,8 @@ void renderGUI() {
 
 	ImGui::SliderInt("Bird Cam", &birdCam, -1, flock.boidList.size());
 
+
+
 	if (ImGui::Button("Exit")) {
 		exit(0);
 	}
@@ -573,21 +510,6 @@ void renderGUI() {
 
 void Idle(void)
 {
-	/*ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplGLUT_NewFrame();
-	ImGui::Render();
-	ImGuiIO& io = ImGui::GetIO();
-
-  glClearColor(0.1,0.1,0.1,1);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-  ftime+=0.05;
-  glUseProgram(shaderProgram);
-
-  renderGUI();
-  RenderObjects();
-
-  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-  glutSwapBuffers(); */
 }
 
 void Display(void)
@@ -736,17 +658,9 @@ void Kbd(unsigned char a, int x, int y)
 	}
 	case 'o':
 	case 'O': {ignoreObjects = !ignoreObjects; break; }
-	case 'g':
-	case 'G': {cone->SetKd(glm::vec3(0, 1, 0)); break; } // these were all sphere before cone was added
-	case 'b':
-	case 'B': {cone->SetKd(glm::vec3(0, 0, 1)); break; }
-	case 'w':
-	case 'W': {cone->SetKd(glm::vec3(0.7, 0.7, 0.7)); break; }
-	case '+': {cone->SetSh(sh += 1); break; }
-	case '-': {cone->SetSh(sh -= 1); if (sh < 1) sh = 1; break; }
+
 	}
 	flock.printVals();
-	//cout << "shineness="<<sh<<endl;
 	glutPostRedisplay();
 }
 
@@ -854,24 +768,11 @@ void InitShapes(ShaderParamsC* params)
 	sphere->SetKdToShader(params->kdParameter);
 	sphere->SetKsToShader(params->ksParameter);
 	sphere->SetShToShader(params->shParameter);
-	/*
-	cone = new Cone();
-	cone->SetKa(glm::vec3(0.1, 0.1, 0.1));
-	cone->SetKs(glm::vec3(0, 0, 1));
-	cone->SetKd(glm::vec3(0.7, 0.7, 0.7));
-	cone->SetSh(200);
-	cone->SetModel(glm::mat4(1.0));
-	cone->SetModelMatrixParamToShader(params->modelParameter);
-	cone->SetModelViewNMatrixParamToShader(params->modelViewNParameter);
-	cone->SetKaToShader(params->kaParameter);
-	cone->SetKdToShader(params->kdParameter);
-	cone->SetKsToShader(params->ksParameter);
-	cone->SetShToShader(params->shParameter);*/
 
 	for (int i = 1; i < 31; i++) {
 		ShapesC* temp = new ModelC("Penguin" + std::to_string(i) + ".obj");
 		temp->SetKa(glm::vec3(0.1, 0.1, 0.1));
-		temp->SetKs(glm::vec3(1, 1, 1));
+		temp->SetKs(glm::vec3(0, 0, 1));
 		temp->SetKd(glm::vec3(0.7, 1, 0.7));
 		temp->SetSh(200);
 		temp->SetModel(glm::mat4(1.0));
