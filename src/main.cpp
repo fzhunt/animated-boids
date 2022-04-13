@@ -62,7 +62,7 @@ bool unpaused = true;
 
 
 
-int birdCam = 0;
+int birdCam = -1;
 
 float max_x = 400.0f;
 float max_y = 400.0f;
@@ -153,7 +153,7 @@ public:
 	float cohesionFactor;
 	float alignmentFactor;
 
-	float maxspeed = 2.0f;
+	float maxspeed = 7.0f;
 
 	Flock() {
 		radius = 30.0f;
@@ -306,14 +306,14 @@ public:
 			if (boid->object) {
 				boid->velocity = glm::vec3(0);
 			}
-			if (birdCam != 0) {
+			/*if (birdCam < 0) {
 				boid->position += boid->velocity * dt * 0.1f;
 				boid->prev_vel = (boid->prev_vel + boid->velocity * dt * 0.1f) / 2.0f;
-			}
-			else {
+			}*/
+			//else {
 				boid->position += boid->velocity * dt * 0.1f;
 				boid->prev_vel = (boid->prev_vel + boid->velocity * dt * 0.1f) / 2.0f;
-			}
+			//}
 
 			if (boid->position.x > max_x - margin) {
 				boid->velocity.x -= turn;
@@ -334,7 +334,7 @@ public:
 			if (boid->position.z < 0 + margin) {
 				boid->velocity.z += turn;
 			}
-			if (boid->velocity.y <= 0) {
+			if (boid->velocity.z <= 0) {
 				boid->index += 4;
 			}
 			boid->index = boid->index % 60;
@@ -388,9 +388,11 @@ public:
 			else {
 				glm::mat4 m = glm::lookAt(glm::vec3(0),//eye
 					boid->velocity,  //destination
-					glm::vec3(0, 1, 0));
+					glm::vec3(0, 0, 1));
 				m = glm::translate(m, pos);
-				m = glm::inverse(m);
+				//if (birdCam < 0) {
+					m = glm::inverse(m);
+				//}
 				models[boid->index / 2]->SetModel(m);
 				glm::mat3 modelViewN = glm::mat3(view * m);
 				modelViewN = glm::transpose(glm::inverse(modelViewN));
@@ -443,7 +445,7 @@ void Reshape(int w, int h)
 }
 
 void setupFlock() {
-	for (int i = 0; i < 500; i++) {
+	for (int i = 0; i < 1000; i++) {
 		float x = ((float)rand() / (float)RAND_MAX) * 20;
 		float y = ((float)rand() / (float)RAND_MAX) * 20;
 		float z = ((float)rand() / (float)RAND_MAX) * 20;
@@ -458,7 +460,7 @@ void setupFlock() {
 			flock.boidList.push_back(new Boid(glm::vec3(a * max_x, b * max_y, c * max_z), glm::vec3(x, y, z), i));
 		}
 		else {
-			flock.boidList.push_back(new Boid(glm::vec3(a * max_x, b * max_y, c * max_z), i));
+			flock.boidList.push_back(new Boid(glm::vec3(x * 2.0f, y * 2.0f, z * 2.0f), i));
 		}
 	}
 
@@ -489,16 +491,16 @@ void RenderObjects()
 					 glm::vec3(0,1,0)); //u
 					 */
 
-	if (birdCam == 0) {
+	if (birdCam < 0) {
 		view = glm::lookAt(glm::vec3(50.f, 50.f, 50.f),//eye
 			glm::vec3(0, 0, 0),  //destination
-			glm::vec3(0, 1, 0)); //up
+			glm::vec3(0, 0, 1)); //up
 	}
 	else {
-		Boid* bird = flock.boidList[birdCam - 1];
+		Boid* bird = flock.boidList[birdCam];
 		view = glm::lookAt(bird->position,//eye
 			bird->position + bird->velocity,  //destination
-			glm::vec3(0, 1, 0)); //up
+			glm::vec3(0, 0, 1)); //up
 	}
 
 	glUniformMatrix4fv(params.viewParameter, 1, GL_FALSE, glm::value_ptr(view));
@@ -530,6 +532,15 @@ void renderGUI() {
 	if (ImGui::Button("Pause")) {
 		unpaused = !unpaused;
 	}
+	if (ImGui::Button("Ignore Objects On/Off")) {
+		if (ignoreObjects) {
+			cout << "Now paying attention to objects!" << endl;
+		}
+		else {
+			cout << "Now ignoring objects!" << endl;
+		}
+		ignoreObjects = !ignoreObjects;
+	}
 	if (ImGui::Button("Reset Parameters")) {
 		flock.setRadius(30.0f);
 		flock.setAngle(90.0f);
@@ -537,11 +548,11 @@ void renderGUI() {
 		flock.setCohesion(0.6f);
 		flock.setAlignment(0.2f);
 		flock.setAvoidanceDistance(10);
-		flock.setMaxSpeed(4);
+		flock.setMaxSpeed(7);
 	}
 
 
-	ImGui::SliderInt("Bird Cam", &birdCam, 0, flock.boidList.size());
+	ImGui::SliderInt("Bird Cam", &birdCam, -1, flock.boidList.size());
 
 	if (ImGui::Button("Exit")) {
 		exit(0);
@@ -708,7 +719,7 @@ void Kbd(unsigned char a, int x, int y)
 		flock.setCohesion(0.6f);
 		flock.setAlignment(0.2f);
 		flock.setAvoidanceDistance(10);
-		flock.setMaxSpeed(4);
+		flock.setMaxSpeed(7);
 		cout << "Reset the parameters!" << endl;
 		break;
 	}
